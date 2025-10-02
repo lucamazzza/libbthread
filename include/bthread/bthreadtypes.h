@@ -8,6 +8,8 @@
 #include <setjmp.h>
 #include <stdint.h>
 
+#include "../tqueue/tqueue.h"
+
 typedef unsigned long int bthread_t;
 
 typedef enum {
@@ -33,4 +35,10 @@ typedef struct {
     void           *retval;
 } __bthread_private;
 
+typedef struct {
+    tqueue_t    queue;
+    tqueue_t    cur;
+    jmp_buf     context;
+    bthread_t   cur_tid;
+} __bthread_scheduler;
 #endif
