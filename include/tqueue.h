@@ -1,7 +1,9 @@
 #ifndef __TQUEUE_H__
 #define __TQUEUE_H__
 
+/* Opaque structure representing a single queue node */
 struct tqueue_node;
+/* A queue is represented as the pointer to the first node */
 typedef struct tqueue_node* tqueue_t;
 
 /* Adds a new element at the end of the queue. Returns its position.*/
@@ -15,4 +17,4 @@ tqueue_t            tqueue_at_offset(tqueue_t q, unsigned long int offset);
 /* Returns the data of the element at the front of the queue without removing it. Returns NULL if the queue is empty.*/
 void               *tqueue_get_data(tqueue_t q);  
 
-#endif
+#endif // __TQUEUE_H__
