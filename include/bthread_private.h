@@ -8,6 +8,7 @@
 #include "tqueue.h"
 
 #define STACK_SIZE               (64 * 1024)
+#define QUANTUM_USEC             50000  // 50 milliseconds
 #define save_context(CONTEXT)    sigsetjmp(CONTEXT, 1)
 #define restore_context(CONTEXT) siglongjmp(CONTEXT, 1)
 
@@ -37,10 +38,6 @@ typedef struct {
     jmp_buf         context;
     bthread_t       cur_tid;
 } __bthread_scheduler;
-typedef struct {
-    void           *owner;
-    tqueue_t        queue;
-} bthread_mutex_t;
 
 /* Creates, mantains and returns a static pointer to a singleton instance of `__bthread_scheduler_private`. */
 __bthread_scheduler *bthread_get_scheduler();
@@ -49,13 +46,19 @@ __bthread_scheduler *bthread_get_scheduler();
  * Otherwise the following steps are performed:
  *  - if `retval` is not `NULL` the exit status of the thread is copied in its pointed location
  *  - the thread's stack is freed and the thread removed from the scheduler
- *  - the function returns `1`. */
+ *  - the function returns `1`. 
+ */
 static int           bthread_is_thread_zombie_state(bthread_t thread, void **retval);
 /* Returns a "view" on the queue beginning at the node containing the data for the thread identified by `thread`
  * If the queue is empty or doesn't contain the data, the function returns `NULL`. */
 static tqueue_t      bthread_get_queue_starting_at_thread(bthread_t thread);
+/* Sets up the stack and context for the thread identified by `thread`, so that when scheduled it starts executing
+ * its body routine with the provided argument. */
 void                 bthread_begin_atomic_execution(void);
+/* Cleans up after the atomic execution of a thread's body routine has ended. */
 void                 bthread_end_atomic_execution(void);
-void                 bthread_setup_timer(void);
+/* Sets up the timer to deliver `SIGALRM` signals at regular intervals defined by `QUANTUM_USEC`,
+ * to allow preemptive scheduling of threads. */
+static void          bthread_setup_timer(void);
 
 #endif // __BTHREAD_PRIVATE_H__

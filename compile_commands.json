@@ -9,113 +9,11 @@
       "-Iinclude",
       "-c",
       "-o",
-      "obj/bthread_demo.o",
-      "src/bthread_demo.c"
-    ],
-    "directory": "/Users/lucamazza/projects/libbthread",
-    "file": "/Users/lucamazza/projects/libbthread/src/bthread_demo.c",
-    "output": "/Users/lucamazza/projects/libbthread/obj/bthread_demo.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/gcc",
-      "-std=gnu11",
-      "-Wall",
-      "-Wextra",
-      "-O2",
-      "-Iinclude",
-      "-c",
-      "-o",
       "obj/bthread.o",
       "src/bthread.c"
     ],
     "directory": "/Users/lucamazza/projects/libbthread",
     "file": "/Users/lucamazza/projects/libbthread/src/bthread.c",
     "output": "/Users/lucamazza/projects/libbthread/obj/bthread.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/gcc",
-      "-std=gnu11",
-      "-Wall",
-      "-Wextra",
-      "-O2",
-      "-Iinclude",
-      "-c",
-      "-o",
-      "obj/tbarrier.o",
-      "src/tbarrier.c"
-    ],
-    "directory": "/Users/lucamazza/projects/libbthread",
-    "file": "/Users/lucamazza/projects/libbthread/src/tbarrier.c",
-    "output": "/Users/lucamazza/projects/libbthread/obj/tbarrier.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/gcc",
-      "-std=gnu11",
-      "-Wall",
-      "-Wextra",
-      "-O2",
-      "-Iinclude",
-      "-c",
-      "-o",
-      "obj/tcondition.o",
-      "src/tcondition.c"
-    ],
-    "directory": "/Users/lucamazza/projects/libbthread",
-    "file": "/Users/lucamazza/projects/libbthread/src/tcondition.c",
-    "output": "/Users/lucamazza/projects/libbthread/obj/tcondition.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/gcc",
-      "-std=gnu11",
-      "-Wall",
-      "-Wextra",
-      "-O2",
-      "-Iinclude",
-      "-c",
-      "-o",
-      "obj/tmutex.o",
-      "src/tmutex.c"
-    ],
-    "directory": "/Users/lucamazza/projects/libbthread",
-    "file": "/Users/lucamazza/projects/libbthread/src/tmutex.c",
-    "output": "/Users/lucamazza/projects/libbthread/obj/tmutex.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/gcc",
-      "-std=gnu11",
-      "-Wall",
-      "-Wextra",
-      "-O2",
-      "-Iinclude",
-      "-c",
-      "-o",
-      "obj/tqueue.o",
-      "src/tqueue.c"
-    ],
-    "directory": "/Users/lucamazza/projects/libbthread",
-    "file": "/Users/lucamazza/projects/libbthread/src/tqueue.c",
-    "output": "/Users/lucamazza/projects/libbthread/obj/tqueue.o"
-  },
-  {
-    "arguments": [
-      "/usr/bin/gcc",
-      "-std=gnu11",
-      "-Wall",
-      "-Wextra",
-      "-O2",
-      "-Iinclude",
-      "-c",
-      "-o",
-      "obj/tsemaphore.o",
-      "src/tsemaphore.c"
-    ],
-    "directory": "/Users/lucamazza/projects/libbthread",
-    "file": "/Users/lucamazza/projects/libbthread/src/tsemaphore.c",
-    "output": "/Users/lucamazza/projects/libbthread/obj/tsemaphore.o"
   }
 ]
