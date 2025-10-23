@@ -6,6 +6,7 @@
 
 #include "bthread.h"
 #include "tqueue.h"
+#include "common.h"
 
 #define STACK_SIZE               (64 * 1024)
 #define QUANTUM_USEC             50000  // 50 milliseconds
@@ -39,8 +40,6 @@ typedef struct {
     bthread_t       cur_tid;
 } __bthread_scheduler;
 
-/* Creates, mantains and returns a static pointer to a singleton instance of `__bthread_scheduler_private`. */
-__bthread_scheduler *bthread_get_scheduler();
 /* Checks wether the thread reference in `thread` has reached `__BTHREAD_ZOMBIE` state.
  * If not (i.e. the thread is still running) the function returns `0`.
  * Otherwise the following steps are performed:
@@ -48,17 +47,21 @@ __bthread_scheduler *bthread_get_scheduler();
  *  - the thread's stack is freed and the thread removed from the scheduler
  *  - the function returns `1`. 
  */
-static int           bthread_is_thread_zombie_state(bthread_t thread, void **retval);
+static UNREF int        bthread_is_thread_zombie_state(bthread_t thread, void **retval);
 /* Returns a "view" on the queue beginning at the node containing the data for the thread identified by `thread`
  * If the queue is empty or doesn't contain the data, the function returns `NULL`. */
-static tqueue_t      bthread_get_queue_starting_at_thread(bthread_t thread);
-/* Sets up the stack and context for the thread identified by `thread`, so that when scheduled it starts executing
- * its body routine with the provided argument. */
-void                 bthread_begin_atomic_execution(void);
-/* Cleans up after the atomic execution of a thread's body routine has ended. */
-void                 bthread_end_atomic_execution(void);
+static UNREF tqueue_t   bthread_get_queue_starting_at_thread(bthread_t thread);
 /* Sets up the timer to deliver `SIGALRM` signals at regular intervals defined by `QUANTUM_USEC`,
  * to allow preemptive scheduling of threads. */
-static void          bthread_setup_timer(void);
+static UNREF void       bthread_setup_timer(void);
+/* Creates, mantains and returns a static pointer to a singleton instance of `__bthread_scheduler_private`. */
+__bthread_scheduler    *bthread_get_scheduler();
+/* Sets up the stack and context for the thread identified by `thread`, so that when scheduled it starts executing
+ * its body routine with the provided argument. */
+void                    bthread_begin_atomic_execution(void);
+/* Cleans up after the atomic execution of a thread's body routine has ended. */
+void                    bthread_end_atomic_execution(void);
+/* A printf-like function that outputs to stdout, used for debugging purposes inside the bthread library. */
+void                    bthread_printf(const char *format, ...);
 
 #endif // __BTHREAD_PRIVATE_H__
