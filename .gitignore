@@ -63,5 +63,11 @@ dkms.conf
 # debug information files
 *.dwo
 
+# Build folders
+bin/
+obj/
+.cache/
+
 # clangd files
 compile_commands.json
+.DS_Store
