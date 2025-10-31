@@ -23,22 +23,22 @@ typedef unsigned char bool;
 #endif
 
 #ifdef __DEBUG
-#define ASSERT(cond, msg) \
-    do { \
-        if (!(condition)) { \
-            fprintf(stderr, "ASSERTION FAILED in %s:%d: %s\n", \
-                __FILE__, __LINE__, message); \
-            abort(); \
-        } \
+#define ASSERT(cond, msg)                                       \
+    do {                                                        \
+        if (!(condition)) {                                     \
+            fprintf(stderr, "ASSERTION FAILED in %s:%d: %s\n",  \
+                __FILE__, __LINE__, message);                   \
+            abort();                                            \
+        }                                                       \
     } while (0)
-#define DEBUG(fmt, ...)      fprintf(stderr, "DEBUG %s:%d: " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__);
+#define DEBUG(fmt, ...)      fprintf(stderr, "DEBUG %s:%d:      " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__);
 #else
 #define ASSERT(cond, msg)   ((void)0)
 #define DEBUG(fmt, ...)     ((void)0)
 #endif
-#define INFO(fmt, ...)      fprintf(stdout, "INFO: " fmt "\n", ##__VA_ARGS__);
-#define WARN(fmt, ...)      fprintf(stderr, "WARNING %s:%d: " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__);
-#define ERROR(fmt, ...)     fprintf(stderr, "ERROR %s:%d: " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__);
+#define INFO(fmt, ...)      fprintf(stdout, "INFO:              " fmt "\n",                     ##__VA_ARGS__);
+#define WARN(fmt, ...)      fprintf(stderr, "WARNING %s:%d:     " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__);
+#define ERROR(fmt, ...)     fprintf(stderr, "ERROR %s:%d:       " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__);
 
 #if defined(__GNUC__) || defined(__clang__)
 #define LIKELY(x)           __builtin_expect(!!(x), 1)

@@ -1,18 +1,18 @@
 # Directories
-INCLUDE_DIR := include
-SRC_DIR := src
-OBJ_DIR := obj
-BIN_DIR := bin
+INCLUDE_DIR 	:= include
+SRC_DIR 		:= src
+OBJ_DIR 		:= obj
+BIN_DIR 		:= bin
 
 # Compiler and flags
-CC := gcc
-CFLAGS := -std=gnu11 -Wall -Wextra -O2 -I$(INCLUDE_DIR)
-LDFLAGS := -lm
+CC 				:= gcc
+CFLAGS 			:= -std=gnu11 -Wall -Wextra -O2 -I$(INCLUDE_DIR)
+LDFLAGS 		:= -lm
 
 # Files
-SRC := $(wildcard $(SRC_DIR)/*.c)
-OBJ := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRC))
-TARGET := $(BIN_DIR)/bthread_demo
+SRC 			:= $(wildcard $(SRC_DIR)/*.c)
+OBJ 			:= $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRC))
+TARGET 			:= $(BIN_DIR)/bthread_demo
 
 # Default target
 all: $(BIN_DIR) $(OBJ_DIR) $(TARGET)
