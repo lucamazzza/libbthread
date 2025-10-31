@@ -1,9 +1,6 @@
 #include <stdio.h>
+
 #include "bthread.h"
-#include "tmutex.h"
-#include "tsemaphore.h"
-#include "tcondition.h"
-#include "tbarrier.h"
 
 void *worker_thread(void *arg) {
     int id = *(int *)arg;
