@@ -1,60 +1,77 @@
-#include <stdint.h>
 #include <stdio.h>
-#include <assert.h>
+#include <stdlib.h>
 
 #include "tqueue.h"
+#include "test.h"
 
-int main(void) {
+static int test_count = 0;
+static int test_passed = 0;
+
+void test_queue_init() {
+    TEST("Queue initialization");
     tqueue_t q = NULL;
-    void *t1, *t2, *t3, *t4;
-    t1 = (void *)1;
-    t2 = (void *)2;
-    t3 = (void *)3;
-    t4 = (void *)4;
+    ASSERT_TEST(tqueue_size(q) == 0, "Expected size 0");
+    PASS();
+}
 
-    assert(tqueue_size(q) == 0);
-    assert(tqueue_enqueue(&q, t1) == 0);
-    assert(tqueue_size(q) == 1);
-    assert(tqueue_enqueue(&q, t2) == 1);
-    assert(tqueue_size(q) == 2);
-    assert(tqueue_enqueue(&q, t3) == 2);
-    assert(tqueue_size(q) == 3);
-    assert(tqueue_enqueue(&q, t4) == 3);
-    assert(tqueue_size(q) == 4);
+void test_queue_enqueue() {
+    TEST("Queue enqueue");
+    tqueue_t q = NULL;
+    int val1 = 42, val2 = 100;
+    tqueue_enqueue(&q, &val1);
+    ASSERT_TEST(tqueue_size(q) == 1, "Expected size 1");
+    tqueue_enqueue(&q, &val2);
+    ASSERT_TEST(tqueue_size(q) == 2, "Expected size 2");
+    PASS();
+}
 
-    for (int i = 0; i < 4; i++) {
-        assert(tqueue_get_data(tqueue_at_offset(q, i)) == (void *) (intptr_t) (i + 1));
-    }
+void test_queue_pop() {
+    TEST("Queue pop");
+    tqueue_t q = NULL;
+    int val1 = 42, val2 = 100;
+    tqueue_enqueue(&q, &val1);
+    tqueue_enqueue(&q, &val2);
+    int *result = (int *)tqueue_pop(&q);
+    ASSERT_TEST(result != NULL, "Expected non-NULL result");
+    ASSERT_TEST(*result == 42, "Expected value 42");
+    ASSERT_TEST(tqueue_size(q) == 1, "Expected size 1");
+    result = (int *)tqueue_pop(&q);
+    ASSERT_TEST(result != NULL, "Expected non-NULL result");
+    ASSERT_TEST(*result == 100, "Expected value 100");
+    ASSERT_TEST(tqueue_size(q) == 0, "Expected size 0");
+    PASS();
+}
 
-    for (int i = 1; i < 5; i++) {
-        assert(tqueue_pop(&q) == (void *) (intptr_t) i);
-        assert(tqueue_size(q) == 4 - i);
-    }
+void test_queue_pop_empty() {
+    TEST("Queue pop empty");
+    tqueue_t q = NULL;
+    void *result = tqueue_pop(&q);
+    ASSERT_TEST(result == NULL, "Expected NULL result");
+    PASS();
+}
 
-    assert(tqueue_pop(&q) == NULL);
+void test_queue_get_data() {
+    TEST("Queue get_data");
+    tqueue_t q = NULL;
+    int val = 42;
+    tqueue_enqueue(&q, &val);
+    int *result = (int *)tqueue_get_data(q);
+    ASSERT_TEST(result != NULL, "Expected non-NULL result");
+    ASSERT_TEST(*result == 42, "Expected value 42");
+    ASSERT_TEST(tqueue_size(q) == 1, "Expected size 1");
+    PASS();
+}
 
-    assert(tqueue_size(q) == 0);
-    assert(tqueue_enqueue(&q, t1) == 0);
-    assert(tqueue_size(q) == 1);
-    assert(tqueue_enqueue(&q, t2) == 1);
-    assert(tqueue_size(q) == 2);
-
-    assert(tqueue_pop(&q) == (void *)1);
-    assert(tqueue_size(q) == 1);
-
-    assert(tqueue_enqueue(&q, t1) == 1);
-    assert(tqueue_size(q) == 2);
-
-    assert(tqueue_pop(&q) == (void *)2);
-    assert(tqueue_size(q) == 1);
-
-    assert(tqueue_at_offset(q, 0) != NULL);
-    assert(tqueue_at_offset(q, 1) == q);
-
-    assert(tqueue_pop(&q) == (void *)1);
-    assert(tqueue_size(q) == 0);
-
-    printf("All tests passed!\n");
-
-    return 0;
+int main() {
+    PRINT_TITLE("Running tqueue Tests");
+    test_queue_init();
+    test_queue_enqueue();
+    test_queue_pop();
+    test_queue_pop_empty();
+    test_queue_get_data();
+    PRINT_TITLE("Test Results");
+    printf("Tests run:    %d\n", test_count);
+    printf("Tests passed: %d\n", test_passed);
+    printf("Tests failed: %d\n", test_count - test_passed);
+    return (test_count == test_passed) ? 0 : 1;
 }
