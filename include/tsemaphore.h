@@ -32,6 +32,8 @@
 #define bthread_sem_up(s)   bthread_sem_post(s)
 #define bthread_sem_down(s) bthread_sem_wait(s)
 
+/* Defines semaphore structure 
+ * A semaphore has a value and a waiting queue. */
 typedef struct {
     int value;
     tqueue_t waiting_queue;

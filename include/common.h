@@ -27,14 +27,25 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-#ifdef __cplusplus
-extern "C" {
+#define LIB_NAME           "bthread"
+#define LIB_VERSION_MAJOR  "0"
+#define LIB_VERSION_MINOR  "1"
+#define LIB_VERSION_PATCH  "0"
+#define LIB_VERSION        LIB_VERSION_MAJOR "." LIB_VERSION_MINOR "." LIB_VERSION_PATCH
+#define LIB_FULLNAME       LIB_NAME " v" LIB_VERSION
+#ifndef BUILD_DATE
+#define BUILD_DATE         0
 #endif
 
+
+#ifdef __cplusplus
+extern "C" {
+#else
 typedef unsigned char bool;
 #define true                ((bool)1)
 #define false               ((bool)0)
 #define TO_BOOL(x)          ((bool))!!(x))
+#endif
 
 #define ARRAY_SIZE(arr)     (sizeof(arr)/sizeof((arr)[0]))
 #define MIN(a,b)            (((a)<(b))?(a):(b)
@@ -42,13 +53,7 @@ typedef unsigned char bool;
 #define SWAP(a,b)           do { a ^= b; b ^= a; a ^= b; } while (0)
 #define UNUSED(x)           (void)(x)
 
-#ifdef NDEBUG
-#define __RELEASE
-#else
-#define __DEBUG
-#endif
-
-#ifdef __DEBUG
+#ifndef NDEBUG
 #define ASSERT(cond, msg)                                       \
     do {                                                        \
         if (!(condition)) {                                     \

@@ -33,10 +33,12 @@
 #define bthread_cond_notify(s)      bthread_cond_signal(s)
 #define bthread_cond_notify_all(s)  bthread_cond_broadcast(s)
 
+/* Defines condition variable structure 
+ * A condition variable has a waiting queue. */
 typedef struct {
     tqueue_t waiting_queue;
 } bthread_cond_t;
-
+/* Defines condition variable attributes structure. Currently not used, only for PThread compatibility */
 typedef struct {} bthread_condattr_t;
 
 /* Initialize a condition variable */

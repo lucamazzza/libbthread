@@ -29,12 +29,14 @@
 
 #include "tqueue.h"
 
+/* Defines barrier structure 
+ * A barrier has a count, size and a waiting queue. */
 typedef struct {
     unsigned int count;
     unsigned int size;
     tqueue_t waiting_queue;
 } bthread_barrier_t;
-
+/* Defines barrier attributes structure. Currently not used, only for PThread compatibility */
 typedef struct {} bthread_barrierattr_t;
 
 /* Initialize a barrier */

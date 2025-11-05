@@ -30,8 +30,7 @@
 #include "tqueue.h"
 
 /* Defines mutex structure 
- * A mutex has an owner and a waiting queue.
- */
+ * A mutex has an owner and a waiting queue.*/
 typedef struct {
     void *owner;
     tqueue_t waiting_queue;
@@ -40,9 +39,9 @@ typedef struct {
 typedef struct {
     char nop;
 } bthread_mutexattr_t;
+
 /* Initialize the mutex and its attributes.
- * The attributes parameter is currently unused, and kept for compatibility with PThread.
- */
+ * The attributes parameter is currently unused, and kept for compatibility with PThread.*/
 int bthread_mutex_init(bthread_mutex_t *m, const bthread_mutexattr_t *attr);
 /* Destroy the mutex, freeing any resources associated with it. */
 int bthread_mutex_destroy(bthread_mutex_t *m);
