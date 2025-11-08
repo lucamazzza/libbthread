@@ -10,6 +10,8 @@
 #include "common.h"
 #include "tqueue.h"
 
+static double get_current_time_millis();
+
 static UNREF int bthread_is_thread_zombie_state(bthread_t thread, void **retval) {
     int done = 0;
     bthread_begin_atomic_execution();
@@ -25,10 +27,11 @@ static UNREF int bthread_is_thread_zombie_state(bthread_t thread, void **retval)
                 free((void *)tp->stack);
                 tp->stack = 0;
             }
+            s->queue = start;
             if (s->cur == start) {
                 s->cur = tqueue_at_offset(start, 1);
             }
-            s->queue = tqueue_pop(&start);
+            tqueue_pop(&s->queue);
             done = 1;
         }
     }
@@ -110,13 +113,18 @@ int bthread_create(bthread_t *thread, const bthread_attr_t *attr, void *(*start_
 int bthread_join(bthread_t thread, void **retval) {
     volatile __bthread_scheduler *s = bthread_get_scheduler();
     s->cur = s->queue;
-    save_context((int *)s->context);
+    save_context(s->context);
     if (bthread_is_thread_zombie_state(thread, retval))
         return 0;
     __bthread_private *tp;
     do {
         s->cur = tqueue_at_offset(s->cur, 1);
         tp = (__bthread_private *)tqueue_get_data(s->cur);
+        if (tp->state == __BTHREAD_SLEEPING) {
+            if (get_current_time_millis() >= tp->wake_up_time) {
+                tp->state = __BTHREAD_READY;
+            }
+        }
     } while (tp->state != __BTHREAD_READY);
     if (LIKELY(tp->stack))
         restore_context(tp->context);
@@ -143,21 +151,12 @@ int bthread_join(bthread_t thread, void **retval) {
 void bthread_yield() {
     bthread_begin_atomic_execution();
     __bthread_scheduler *s = bthread_get_scheduler();
-    tqueue_t prev = s->cur;
-    s->cur = tqueue_at_offset(s->cur, 1);
-    if (!s->cur) {
-        s->cur = s->queue;
+    __bthread_private *tp = (__bthread_private *)tqueue_get_data(s->cur);
+    if (tp && save_context(tp->context) != 0) {
+        bthread_end_atomic_execution();
+        return;
     }
-    if (save_context(s->context) == 0) {
-        __bthread_private *tp = (__bthread_private *)tqueue_get_data(prev);
-        if (tp->state == __BTHREAD_READY) {
-            save_context(tp->context);
-        }
-        restore_context(s->context);
-    } else {
-        __bthread_private *tp = (__bthread_private *)tqueue_get_data(s->cur);
-        restore_context(tp->context);
-    }
+    restore_context(s->context);
     bthread_end_atomic_execution();
 }
 
@@ -169,20 +168,20 @@ void bthread_exit(void *retval) {
     bthread_yield();
 }
 
+static double get_current_time_millis() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (tv.tv_sec) * 1000 + (tv.tv_usec) / 1000;
+}
+
 void bthread_sleep(double ms) {
     bthread_begin_atomic_execution();
     __bthread_scheduler *s = bthread_get_scheduler();
     __bthread_private *tp = (__bthread_private *)tqueue_get_data(s->cur);
     tp->state = __BTHREAD_SLEEPING;
-    struct itimerval time;
-    time.it_interval.tv_sec = 0;
-    time.it_interval.tv_usec = 0;
-    time.it_value.tv_sec = (int)(ms / 1000);
-    time.it_value.tv_usec = (int)((ms - (time.it_value.tv_sec * 1000)) * 1000);
-    setitimer(ITIMER_REAL, &time, NULL);
-    bthread_yield();
-    tp->state = __BTHREAD_READY;
+    tp->wake_up_time = get_current_time_millis() + ms;
     bthread_end_atomic_execution();
+    bthread_yield();
 }
 
 int bthread_cancel(bthread_t thread) {

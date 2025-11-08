@@ -55,6 +55,7 @@ typedef struct {
     uintptr_t       stack;
     jmp_buf         context;
     void           *retval;
+    double          wake_up_time;
 } __bthread_private;
 /* Responsible for initializing and scheduling threads, according to some scheduling policy.
  * The list of threads is stored in a `tqueue_t`, `cur` refers to the currently executing thread.

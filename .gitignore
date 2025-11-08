@@ -71,3 +71,4 @@ obj/
 # clangd files
 compile_commands.json
 .DS_Store
+lib/

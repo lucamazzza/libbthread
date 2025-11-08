@@ -25,6 +25,16 @@ void  test(int i);
 void  think(int i);
 void  eat(int i);
 
+void think(int i) {
+    bthread_printf("Philosopher %d is thinking...\n", i);
+    bthread_sleep(200);
+}
+
+void eat(int i) {
+    bthread_printf("Philosopher %d is eating...\n", i);
+    bthread_sleep(300);
+}
+
 void *philosopher(void* arg) {
     volatile int i;
     i = (intptr_t)arg;
