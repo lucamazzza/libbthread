@@ -9,25 +9,25 @@ LIB_DIR 		:= lib
 # Detect platform
 UNAME_S := $(shell uname -s)
 ifeq ($(OS),Windows_NT)
-	PLATFORM := Windows
-	SHARED_EXT := .dll
+	PLATFORM     := Windows
+	SHARED_EXT   := .dll
 	SHARED_FLAGS := -shared
-	LIB_PREFIX :=
+	LIB_PREFIX   :=
 else ifeq ($(UNAME_S),Linux)
-	PLATFORM := Linux
-	SHARED_EXT := .so
+	PLATFORM     := Linux
+	SHARED_EXT   := .so
 	SHARED_FLAGS := -shared -fPIC
-	LIB_PREFIX := lib
+	LIB_PREFIX   := lib
 else ifeq ($(UNAME_S),Darwin)
-	PLATFORM := macOS
-	SHARED_EXT := .dylib
+	PLATFORM     := macOS
+	SHARED_EXT   := .dylib
 	SHARED_FLAGS := -dynamiclib -fPIC
-	LIB_PREFIX := lib
+	LIB_PREFIX   := lib
 else
-	PLATFORM := Unknown
-	SHARED_EXT := .so
+	PLATFORM     := Unknown
+	SHARED_EXT   := .so
 	SHARED_FLAGS := -shared -fPIC
-	LIB_PREFIX := lib
+	LIB_PREFIX   := lib
 endif
 
 # Compiler and flags
@@ -49,6 +49,10 @@ SHARED_LIB 		:= $(LIB_DIR)/$(LIB_PREFIX)$(LIB_NAME)$(SHARED_EXT)
 TEST_SRC 		:= $(wildcard $(TEST_DIR)/*_test.c)
 TEST_OBJ 		:= $(filter-out $(OBJ_DIR)/bthread_demo.o, $(OBJ))
 TEST_BINS 		:= $(patsubst $(TEST_DIR)/%.c,$(BIN_DIR)/%,$(TEST_SRC))
+
+# Demo files
+DEMO_SRC 		:= $(wildcard $(DEMO_DIR)/*.c)
+DEMO_BINS 		:= $(patsubst $(DEMO_DIR)/%.c,$(BIN_DIR)/%,$(DEMO_SRC))
 
 # Default target
 all: $(BIN_DIR) $(OBJ_DIR) $(TARGET) $(SHARED_LIB)
@@ -93,6 +97,10 @@ $(BIN_DIR) $(OBJ_DIR):
 $(BIN_DIR)/%_test: $(TEST_DIR)/%_test.c $(TEST_OBJ)
 	$(CC) $(CFLAGS) $< $(TEST_OBJ) -o $@ $(LDFLAGS)
 
+# Build demo binaries
+$(BIN_DIR)/bthread_%: $(DEMO_DIR)/bthread_%.c $(OBJ)
+	$(CC) $(CFLAGS) $< $(OBJ) -o $@ $(LDFLAGS)
+
 # Run all tests
 test: $(BIN_DIR) $(OBJ_DIR) $(TEST_BINS)
 	@echo "Running all tests..."
@@ -103,9 +111,22 @@ test: $(BIN_DIR) $(OBJ_DIR) $(TEST_BINS)
 	@echo ""
 	@echo "All tests passed!"
 
+# Build all demos
+demos: $(BIN_DIR) $(OBJ_DIR) $(DEMO_BINS)
+
+# Individual demo targets
+bthread_barber: $(BIN_DIR)/bthread_barber
+bthread_demo: $(BIN_DIR)/bthread_demo
+bthread_philosophers: $(BIN_DIR)/bthread_philosophers
+bthread_prodcons: $(BIN_DIR)/bthread_prodcons
+bthread_prodcons_cond: $(BIN_DIR)/bthread_prodcons_cond
+bthread_rw_fair: $(BIN_DIR)/bthread_rw_fair
+bthread_rw_r: $(BIN_DIR)/bthread_rw_r
+bthread_rw_w: $(BIN_DIR)/bthread_rw_w
+
 # Clean
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR) $(LIB_DIR)
 
-.PHONY: all clean test lib
+.PHONY: all clean test lib demos bthread_barber bthread_demo bthread_philosophers bthread_prodcons bthread_prodcons_cond bthread_rw_fair bthread_rw_r bthread_rw_w
 

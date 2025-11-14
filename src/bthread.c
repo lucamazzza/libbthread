@@ -104,6 +104,7 @@ int bthread_create(bthread_t *thread, const bthread_attr_t *attr, void *(*start_
     t->attr = *attr;
     t->state = __BTHREAD_READY;
     t->stack = 0;
+    t->cancel_req = 0;
     tqueue_enqueue(&s->queue, t);
     if (LIKELY(thread))
         *thread = t->tid;
@@ -190,7 +191,7 @@ int bthread_cancel(bthread_t thread) {
     if (LIKELY(start)) {
         __bthread_private *tp = (__bthread_private *)tqueue_get_data(start);
         if (tp->tid == thread) {
-            tp->state = __BTHREAD_ZOMBIE;
+            tp->cancel_req = 1;
             bthread_end_atomic_execution();
             return 0;
         }
@@ -203,9 +204,9 @@ void bthread_testcancel(void) {
     bthread_begin_atomic_execution();
     __bthread_scheduler *s = bthread_get_scheduler();
     __bthread_private *tp = (__bthread_private *)tqueue_get_data(s->cur);
-    if (tp->state == __BTHREAD_ZOMBIE) {
+    if (tp->cancel_req) {
         bthread_end_atomic_execution();
-        bthread_yield();
+        bthread_exit((void *)-1);
     }
     bthread_end_atomic_execution();
 }

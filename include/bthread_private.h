@@ -45,7 +45,8 @@
  *  - the execution state
  *  - attributes
  *  - stack content
- *  - return value */
+ *  - return value
+ *  - cancellation request flag */
 typedef struct {
     bthread_t       tid;
     bthread_routine body;
@@ -56,6 +57,7 @@ typedef struct {
     jmp_buf         context;
     void           *retval;
     double          wake_up_time;
+    int             cancel_req;
 } __bthread_private;
 /* Responsible for initializing and scheduling threads, according to some scheduling policy.
  * The list of threads is stored in a `tqueue_t`, `cur` refers to the currently executing thread.
