@@ -54,7 +54,7 @@ typedef struct {
     bthread_state   state;
     bthread_attr_t  attr;
     uintptr_t       stack;
-    sigjmp_buf         context;
+    sigjmp_buf      context;
     void           *retval;
     double          wake_up_time;
     int             cancel_req;
