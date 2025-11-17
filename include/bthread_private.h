@@ -65,7 +65,7 @@ typedef struct {
 typedef struct {
     tqueue_t        queue;
     tqueue_t        cur;
-    sigjmp_buf         context;
+    sigjmp_buf      context;
     bthread_t       cur_tid;
 } __bthread_scheduler;
 
