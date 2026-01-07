@@ -43,6 +43,7 @@ static UNREF int bthread_is_thread_zombie_state(bthread_t thread, void **retval)
 static UNREF tqueue_t bthread_get_queue_starting_at_thread(bthread_t thread) {
     volatile __bthread_scheduler *s = bthread_get_scheduler();
     volatile tqueue_t cur = s->queue;
+    if (UNLIKELY(cur == NULL)) return NULL;
     while (cur) {
         __bthread_private *tp = (__bthread_private *)tqueue_get_data(cur);
         if (tp->tid == thread) {
@@ -56,7 +57,7 @@ static UNREF tqueue_t bthread_get_queue_starting_at_thread(bthread_t thread) {
 static UNREF void bthread_setup_timer() {
     static bool initialized = false;
     if (UNLIKELY(!initialized)) {
-        signal(SIGVTALRM, (void (*)(int))bthread_yield);
+        signal(SIGVTALRM, (void (*)())bthread_yield);
         struct itimerval time;
         time.it_interval.tv_sec = 0;
         time.it_interval.tv_usec = QUANTUM_USEC;
@@ -68,23 +69,32 @@ static UNREF void bthread_setup_timer() {
 }
 
 __bthread_scheduler *bthread_get_scheduler(void) {
-    static __bthread_scheduler s = {0};
-    return &s;
+    static __bthread_scheduler* s;
+    if (UNLIKELY(s == NULL)) {
+        s = (__bthread_scheduler*)malloc(sizeof(__bthread_scheduler));
+        sigemptyset(&s->timer_sig_mask);
+        sigaddset(&s->timer_sig_mask, SIGVTALRM);
+        s->queue = NULL;
+        s->scheduling_routine = NULL;
+        s->cur = NULL;
+        s->cur_tid = 0;
+    }
+    return s;
 }
 
 void bthread_begin_atomic_execution() {
-    bthread_setup_timer();
-    sigset_t sigset;
-    sigemptyset(&sigset);
-    sigaddset(&sigset, SIGVTALRM);
-    sigprocmask(SIG_BLOCK, &sigset, NULL);
+    __bthread_scheduler *s = bthread_get_scheduler();
+    sigprocmask(SIG_BLOCK, &s->timer_sig_mask, NULL);
 }
 
 void bthread_end_atomic_execution() {
-    sigset_t sigset;
-    sigemptyset(&sigset);
-    sigaddset(&sigset, SIGVTALRM);
-    sigprocmask(SIG_UNBLOCK, &sigset, NULL);
+    __bthread_scheduler *s = bthread_get_scheduler();
+    sigprocmask(SIG_UNBLOCK, &s->timer_sig_mask, NULL);
+}
+
+void bthread_set_scheduling_routine(bthread_scheduling_routine routine) {
+    __bthread_scheduler *s = bthread_get_scheduler();
+    s->scheduling_routine = routine;
 }
 
 void bthread_printf(const char *format, ...) {
@@ -97,65 +107,71 @@ void bthread_printf(const char *format, ...) {
 }
 
 int bthread_create(bthread_t *thread, const bthread_attr_t *attr, void *(*start_routine)(void *), void *arg) {
-    __bthread_scheduler *s = bthread_get_scheduler();
-    __bthread_private *t = malloc(sizeof(__bthread_private));
-    t->tid = ++s->cur_tid;
-    t->body = start_routine;
-    t->arg = arg;
-    t->attr = *attr;
-    t->state = __BTHREAD_READY;
-    t->stack = 0;
-    t->cancel_req = 0;
-    tqueue_enqueue(&s->queue, t);
-    if (LIKELY(thread))
-        *thread = t->tid;
+    bthread_begin_atomic_execution();
+    volatile __bthread_scheduler* scheduler = bthread_get_scheduler();
+    volatile __bthread_private* bthread_priv = (__bthread_private*) malloc(sizeof(__bthread_private));
+    bthread_priv->body = start_routine;
+    bthread_priv->arg = arg;
+    if (attr != NULL) bthread_priv->attr = *attr;
+    bthread_priv->stack = (uintptr_t) NULL;
+    bthread_priv->cancel_req = 0;
+    bthread_priv->wake_up_time = 0;
+    bthread_priv->tid = ++scheduler->cur_tid;
+    tqueue_enqueue(&scheduler->queue, bthread_priv);
+    bthread_priv->state = __BTHREAD_READY;
+    *thread = bthread_priv->tid;
     return 0;
 }
 
 int bthread_join(bthread_t thread, void **retval) {
-    volatile __bthread_scheduler *s = bthread_get_scheduler();
-    s->cur = s->queue;
-    save_context((int *)s->context);
-    if (bthread_is_thread_zombie_state(thread, retval))
-        return 0;
-    volatile __bthread_private *tp;
+ bthread_begin_atomic_execution();
+    volatile __bthread_scheduler* scheduler = bthread_get_scheduler();
+    scheduler->cur = scheduler->queue;
+    save_context(scheduler->context);
+    if (bthread_is_thread_zombie_state(thread, retval)) return 0;
+    bthread_setup_timer();
+    __bthread_private* tp;
     do {
-        s->cur = tqueue_at_offset(s->cur, 1);
-        tp = (__bthread_private *)tqueue_get_data(s->cur);
+        if (scheduler->scheduling_routine != NULL) scheduler->scheduling_routine();
+        else scheduler->cur = tqueue_at_offset(scheduler->cur, 1);
+        tp = (__bthread_private*) tqueue_get_data(scheduler->cur);
+        double tms = get_current_time_millis();
+        if (tp->state == __BTHREAD_SLEEPING) {
+            if (tp->wake_up_time < tms) tp->state = __BTHREAD_READY;
+        }
     } while (tp->state != __BTHREAD_READY);
-    if (LIKELY(tp->stack))
-        restore_context((int *)tp->context);
-    else {
-        tp->stack = (uintptr_t)malloc(sizeof(char) * STACK_SIZE);
+    if (tp->stack) {
+        restore_context(tp->context);
+    } else {
+        tp->stack = (uintptr_t) malloc(sizeof(char) * STACK_SIZE);
         uintptr_t target = tp->stack + STACK_SIZE - 1;
         target -= (target % 16);
-#if __aarch64__
-        asm __volatile__("mov x1, %0" ::"r"(tp) : "x1");
-        asm __volatile__("mov sp, %0" ::"r"((uintptr_t)target) : "x1");
-        asm __volatile__("mov %0, x1" : "=r"(tp));
-#elif __arm__
-        asm __volatile__("mov %%sp, %0" ::"r"((uintptr_t)target));
+#if __aarch64__ 
+        asm __volatile__("mov %%sp, %0" :: "r"((uintptr_t) target));    
 #elif __x86_64__
-        asm __volatile__("movq %0, %%rsp" ::"r"((uintptr_t)target));
+        asm __volatile__("movq %0, %%rsp" :: "r"((uintptr_t) target));
 #else
-        asm __volatile__("movl %0, %%esp" ::"r"((uintptr_t)target));
+        asm __volatile__("movl %0, %%esp" :: "r"((uintptr_t) target));
 #endif
+        bthread_end_atomic_execution();
         bthread_exit(tp->body(tp->arg));
+        return -1; 
     }
-    return 0;
+
 }
 
 void bthread_yield() {
     bthread_begin_atomic_execution();
     volatile __bthread_scheduler *s = bthread_get_scheduler();
     volatile __bthread_private *tp = (__bthread_private *)tqueue_get_data(s->cur);
-    if (tp && save_context((int *)tp->context) == 0) {
-        restore_context((int *)s->context);
+    if (tp && save_context(tp->context) == 0) {
+        restore_context(s->context);
     }
     bthread_end_atomic_execution();
 }
 
 void bthread_exit(void *retval) {
+    bthread_begin_atomic_execution();
     volatile __bthread_scheduler *s = bthread_get_scheduler();
     volatile __bthread_private *tp = (__bthread_private *)tqueue_get_data(s->cur);
     tp->retval = retval;
@@ -176,31 +192,22 @@ void bthread_sleep(double ms) {
     tp->state = __BTHREAD_SLEEPING;
     tp->wake_up_time = get_current_time_millis() + ms;
     bthread_end_atomic_execution();
-    bthread_yield();
+    while (tp->state != __BTHREAD_READY)
+        bthread_yield();
 }
 
 int bthread_cancel(bthread_t thread) {
-    bthread_begin_atomic_execution();
-    tqueue_t start = bthread_get_queue_starting_at_thread(thread);
-    if (LIKELY(start)) {
-        __bthread_private *tp = (__bthread_private *)tqueue_get_data(start);
-        if (tp->tid == thread) {
-            tp->cancel_req = 1;
-            bthread_end_atomic_execution();
-            return 0;
-        }
-    }
-    bthread_end_atomic_execution();
-    return -1;
+    tqueue_t q = bthread_get_queue_starting_at_thread(thread);
+    if (q != NULL) {
+        ((__bthread_private*) tqueue_get_data(q))->cancel_req = 1;
+        return 0;
+    } else return -1;
 }
 
 void bthread_testcancel(void) {
-    bthread_begin_atomic_execution();
-    __bthread_scheduler *s = bthread_get_scheduler();
-    __bthread_private *tp = (__bthread_private *)tqueue_get_data(s->cur);
-    if (tp->cancel_req) {
-        bthread_end_atomic_execution();
-        bthread_exit((void *)-1);
+    volatile __bthread_scheduler* scheduler = bthread_get_scheduler();
+    volatile __bthread_private* thread = (__bthread_private*) tqueue_get_data(scheduler->cur);
+    if (thread->cancel_req) {
+        bthread_exit((void*) -1);
     }
-    bthread_end_atomic_execution();
 }

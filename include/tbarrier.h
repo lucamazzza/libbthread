@@ -37,7 +37,9 @@ typedef struct {
     tqueue_t waiting_queue;
 } bthread_barrier_t;
 /* Defines barrier attributes structure. Currently not used, only for PThread compatibility */
-typedef struct {} bthread_barrierattr_t;
+typedef struct {
+    char nop;
+} bthread_barrierattr_t;
 
 /* Initialize a barrier */
 int bthread_barrier_init(bthread_barrier_t *bar, const bthread_barrierattr_t *attr, unsigned count);

@@ -29,17 +29,12 @@
 
 /* A thread, represented by its thread identifier */
 typedef unsigned long int bthread_t;
-/* Thread states options */
-typedef enum {
-  __BTHREAD_READY = 0,
-  __BTHREAD_ZOMBIE,
-  __BTHREAD_BLOCKED,
-  __BTHREAD_SLEEPING,
-} bthread_state;
+
 /* Attributes passed to the thread function upon execution. */
 typedef struct {
 } bthread_attr_t;
 typedef void *(*bthread_routine)(void *);
+typedef void (*bthread_scheduling_routine)();
 
 /* Creates a new thread structure and puts it at the end off the queue. 
  * The Thread Identifier corresponds to the position in the queue. 
@@ -62,5 +57,7 @@ void bthread_sleep(double ms);
 int bthread_cancel(bthread_t thread);
 /* Cancellation point marker. When called the executing thread calls upon cancellation (if requested). */
 void bthread_testcancel(void);
+/* Sets a custom scheduling routine to be called at each scheduling point. */
+void bthread_set_scheduling_routine(bthread_scheduling_routine routine);
 
 #endif // __BTHREAD_H__

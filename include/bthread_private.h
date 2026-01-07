@@ -27,17 +27,30 @@
 #ifndef __BTHREAD_PRIVATE_H__
 #define __BTHREAD_PRIVATE_H__
 
+#include <assert.h>
+#include <stdlib.h>
+#include <signal.h>
 #include <setjmp.h>
+#include <sys/time.h>
+#include <stdio.h>
 #include <stdint.h>
 
 #include "bthread.h"
 #include "tqueue.h"
 #include "common.h"
 
-#define STACK_SIZE               (64 * 1024)
+#define STACK_SIZE               (64 * 1024 * 1024)
 #define QUANTUM_USEC             50000  // 50 milliseconds
 #define save_context(CONTEXT)    sigsetjmp(CONTEXT, 1)
 #define restore_context(CONTEXT) siglongjmp(CONTEXT, 1)
+
+/* Thread states options */
+typedef enum {
+  __BTHREAD_READY = 0,
+  __BTHREAD_ZOMBIE,
+  __BTHREAD_BLOCKED,
+  __BTHREAD_SLEEPING,
+} bthread_state;
 
 /* Contains all the information regarding the thread:
  *  - an identifier
@@ -58,15 +71,21 @@ typedef struct {
     void           *retval;
     double          wake_up_time;
     int             cancel_req;
+    int             prio;
+    int             quantums;
+    double          quantum_start;
+    double          quantum_use;
 } __bthread_private;
 /* Responsible for initializing and scheduling threads, according to some scheduling policy.
  * The list of threads is stored in a `tqueue_t`, `cur` refers to the currently executing thread.
  */
 typedef struct {
-    tqueue_t        queue;
-    tqueue_t        cur;
-    sigjmp_buf      context;
-    bthread_t       cur_tid;
+    tqueue_t                    queue;
+    tqueue_t                    cur;
+    sigjmp_buf                  context;
+    bthread_t                   cur_tid;
+    sigset_t                    timer_sig_mask;
+    bthread_scheduling_routine  scheduling_routine;
 } __bthread_scheduler;
 
 /* Checks wether the thread reference in `thread` has reached `__BTHREAD_ZOMBIE` state.
@@ -92,5 +111,7 @@ void                    bthread_begin_atomic_execution(void);
 void                    bthread_end_atomic_execution(void);
 /* A printf-like function that outputs to stdout, used for debugging purposes inside the bthread library. */
 void                    bthread_printf(const char *format, ...);
+/* Cleans up all the resources allocated by the bthread library. */
+void                    bthread_cleanup();
 
 #endif // __BTHREAD_PRIVATE_H__

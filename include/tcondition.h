@@ -39,7 +39,9 @@ typedef struct {
     tqueue_t waiting_queue;
 } bthread_cond_t;
 /* Defines condition variable attributes structure. Currently not used, only for PThread compatibility */
-typedef struct {} bthread_condattr_t;
+typedef struct {
+    char nop; 
+} bthread_condattr_t;
 
 /* Initialize a condition variable */
 int bthread_cond_init(bthread_cond_t *cond, const bthread_condattr_t *attr);
