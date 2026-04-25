@@ -7,7 +7,6 @@
 <p align='center'>
 
 <img src="https://img.shields.io/badge/11-%23323b9d?style=for-the-badge&logo=c&logoColor=%23323b9d&labelColor=%23ffffff&color=%23323b9d"/>
-<img src="https://img.shields.io/github/actions/workflow/status/lucamazzza/libbthread/.github%2Fworkflows%2Fcmake_multiplatform.yml?style=for-the-badge&logo=cmake&logoSize=auto&label=%20"/>
 
 </p>
 
